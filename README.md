@@ -1,3 +1,5 @@
+
+
 ---
 
 # Fungible Token Contract
