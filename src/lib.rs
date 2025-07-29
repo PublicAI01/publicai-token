@@ -67,6 +67,17 @@ impl Contract {
         );
         self.metadata.set(&metadata);
     }
+
+    pub fn update_owner(&mut self, new_owner: AccountId) -> bool {
+        require!(
+            env::predecessor_account_id() == self.owner_id,
+            "Owner's method"
+        );
+        require!(!new_owner.as_str().is_empty(), "New owner cannot be empty");
+        log!("Owner updated from {} to {}", self.owner_id, new_owner);
+        self.owner_id = new_owner;
+        true
+    }
 }
 
 #[near]
@@ -821,5 +832,33 @@ mod tests {
         let transfer_amount = TOTAL_SUPPLY / 10;
 
         contract.ft_transfer_call(user1(), transfer_amount.into(), None, "".to_string());
+    }
+
+    #[test]
+    fn test_update_owner_success() {
+        let (mut contract, mut context) = setup();
+
+        testing_env!(context
+            .predecessor_account_id(owner())
+            .attached_deposit(NearToken::from_yoctonear(1))
+            .build());
+        let new_owner: AccountId = "bob.testnet".parse().unwrap();
+        let result = contract.update_owner(new_owner.clone());
+        assert!(result, "Owner should be updated successfully");
+        assert_eq!(contract.owner_id, new_owner);
+    }
+
+    #[test]
+    #[should_panic(expected = "Owner's method")]
+    fn test_update_owner_only_owner_can_call() {
+        let (mut contract, mut context) = setup();
+        let old_owner: AccountId = "alice.testnet".parse().unwrap();
+        let new_owner: AccountId = "bob.testnet".parse().unwrap();
+        testing_env!(context
+            .predecessor_account_id(old_owner)
+            .attached_deposit(NearToken::from_yoctonear(1))
+            .build());
+
+        contract.update_owner(new_owner.clone());
     }
 }
