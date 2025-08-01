@@ -68,7 +68,9 @@ impl Contract {
         self.metadata.set(&metadata);
     }
 
+    #[payable]
     pub fn update_owner(&mut self, new_owner: AccountId) -> bool {
+        assert_one_yocto();
         require!(
             env::predecessor_account_id() == self.owner_id,
             "Owner's method"
